@@ -9,7 +9,7 @@ use crate::{
     entries::Entry,
     exporters::Exporter,
     filters::{predicate_filter, FilterParam},
-    providers::{clockify::Clockify, Provider},
+    providers::{clockify::Clockify, ics::Ics, Provider},
     renamers::Renames,
     tablers::{proportional::Proportional, MyTable, Tabler},
     utils::{self, split_eq},
@@ -40,6 +40,10 @@ impl ProviderHandle {
             "Clockify" | "clockify" => Ok(ProviderHandle::from_provider(
                 args,
                 Box::new(Clockify::new(options)),
+            )),
+            "ICS" | "Ics" | "ics" => Ok(ProviderHandle::from_provider(
+                args,
+                Box::new(Ics::new(options)),
             )),
             _ => Err(ProviderNotFound),
         }
