@@ -22,7 +22,6 @@ rand = "0.8.5"
 wasm-bindgen = "0.2.93"
 getrandom = { version = "0.2", features = ["js"] }
 tokio = { version = "1.40.0", features = ["macros", "rt"] }
-futures = "0.3.30"
 wasm-bindgen-futures = "0.4.43"
 console_error_panic_hook = "0.1.7"
 web-sys = { version = "0.3.70", features = [
@@ -40,11 +39,12 @@ web-sys = { version = "0.3.70", features = [
     "HtmlHeadElement",
     "HtmlStyleElement",
 ] }
-describe = "0.1.0"
 serde-wasm-bindgen = "0.6.5"
 gloo = "0.11.0"
 async-trait = "0.1.83"
 thiserror = "1.0.64"
+
+[dev-dependencies]
 serial_test = "3.1.1"
 
 [lints.rust]

@@ -25,3 +25,5 @@ jobs:
     - run: rustup component add clippy
     - name: Check Rust linting
       run: cargo clippy -- -D warnings
+    - name: Check Rust dependencies
+      run: cargo clippy --lib --no-deps -- -Dunused-crate-dependencies
