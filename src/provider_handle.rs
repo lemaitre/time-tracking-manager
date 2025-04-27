@@ -28,7 +28,10 @@ impl ProviderHandle {
         let options = args
             .provider_options
             .iter()
-            .map(|o| split_eq(o).unwrap())
+            .map(|o| {
+                let (s1, s2) = split_eq(o).unwrap();
+                (s1.to_owned(), s2.to_owned())
+            })
             .collect();
 
         let provider = args.provider.clone();

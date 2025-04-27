@@ -2,24 +2,15 @@ use chrono::{DateTime, Months, TimeDelta, Utc};
 
 use crate::errors::SplitError;
 
-pub fn split___(s: &str) -> (String, String) {
-    let s: Vec<&str> = s.split("___").collect();
-    if s.len() == 1 {
-        (s[0].to_string(), String::new())
-    } else {
-        (s[0].to_string(), s[1].to_string())
-    }
+pub fn split___(s: &str) -> (&str, &str) {
+    s.split_once("___").unwrap_or((s, ""))
 }
 
-pub fn split_eq(s: &str) -> Result<(String, String), SplitError> {
-    let split: Vec<&str> = s.split("=").collect();
-    match split.len() {
-        2 => Ok((split[0].to_string(), split[1].to_string())),
-        _ => Err(SplitError {
-            field: s.to_string(),
-            reason: String::from("field should contain one and only one (key=value)"),
-        }),
-    }
+pub fn split_eq(s: &str) -> Result<(&str, &str), SplitError> {
+    s.split_once('=').ok_or_else(|| SplitError {
+        field: s.to_string(),
+        reason: String::from("field should contain one `=` (key=value)"),
+    })
 }
 
 pub fn end_of_month(date: &DateTime<Utc>) -> DateTime<Utc> {

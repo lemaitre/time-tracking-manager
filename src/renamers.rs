@@ -16,9 +16,14 @@ struct RenameParam {
 impl RenameParam {
     pub fn build(s: &str) -> Result<RenameParam, Box<dyn Error>> {
         let (lhs, rhs) = split_eq(s)?;
-        let (p1, t1) = split___(lhs.as_str());
-        let (p2, t2) = split___(rhs.as_str());
-        Ok(RenameParam { p1, p2, t1, t2 })
+        let (p1, t1) = split___(lhs);
+        let (p2, t2) = split___(rhs);
+        Ok(RenameParam {
+            p1: p1.to_owned(),
+            p2: p2.to_owned(),
+            t1: t1.to_owned(),
+            t2: t2.to_owned(),
+        })
     }
 }
 
