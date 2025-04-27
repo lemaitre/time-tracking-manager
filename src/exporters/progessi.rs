@@ -1,6 +1,6 @@
-use std::{collections::HashMap, error::Error, rc::Rc, str::FromStr, sync::Mutex};
+use std::{collections::HashMap, error::Error, rc::Rc, sync::Mutex};
 
-use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Utc};
 use gloo::events::EventListener;
 use wasm_bindgen::{
     convert::FromWasmAbi, describe::WasmDescribe, prelude::wasm_bindgen, JsCast, JsValue,
@@ -16,8 +16,8 @@ use crate::{
 
 use web_sys::{
     console::log_1, Document, Event, HtmlButtonElement, HtmlDivElement, HtmlElement,
-    HtmlInputElement, HtmlLiElement, HtmlOptionElement, HtmlSelectElement, HtmlStyleElement,
-    HtmlUListElement, NodeList,
+    HtmlInputElement, HtmlLiElement, HtmlOptionElement, HtmlSelectElement, HtmlSpanElement,
+    HtmlStyleElement, HtmlUListElement, NodeList,
 };
 
 use super::Exporter;
@@ -449,6 +449,39 @@ fn create_button(document: &Document, text: &str) -> HtmlButtonElement {
     button
 }
 
+fn parse_french_date(date: &str) -> DateTime<Utc> {
+    let mut parts = date.split_whitespace();
+    let first_word = parts.next().expect("Date should have a first word");
+    let translated = match first_word.to_lowercase().as_str() {
+        "janvier" => "January",
+        "février" => "February",
+        "mars" => "March",
+        "avril" => "April",
+        "mai" => "May",
+        "juin" => "June",
+        "juillet" => "July",
+        "août" => "August",
+        "septembre" => "September",
+        "octobre" => "October",
+        "novembre" => "November",
+        "décembre" => "December",
+        _ => first_word,
+    };
+
+    let date = std::iter::once(translated)
+        .chain(parts)
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    let date = date + " 01";
+
+    let date = NaiveDate::parse_from_str(&date, "%B %Y %d").expect("Date should be valid");
+
+    let date = date.and_hms_opt(0, 0, 0).expect("Invalid added time");
+
+    date.and_utc()
+}
+
 #[wasm_bindgen]
 impl ProgessiHandle {
     pub async fn new(args: Args, document: JsValue) -> ProgessiHandle {
@@ -468,19 +501,21 @@ impl ProgessiHandle {
             .dyn_into::<HtmlDivElement>()
             .expect("should be a div element");
 
-        let start = document
-            .query_selector(".menu-selector-validateTimesheet > form > input[name=\"fromDate\"]")
-            .expect("Validate button should have a date input")
-            .expect("Validate button should have a date input")
-            .dyn_into::<HtmlInputElement>()
-            .expect("Element should be cast into input")
-            .value()
-            .replace(" ", "T");
+        let header = document
+            .query_selector("span.header-text")
+            .expect("Sheet header containing current month should be available")
+            .expect("Sheet header containing current month should be available")
+            .dyn_into::<HtmlSpanElement>()
+            .expect("Element should be cast into span")
+            .inner_text();
 
-        let start = NaiveDateTime::from_str(&start)
-            .expect("date should be valid")
-            .and_local_timezone(Utc)
-            .unwrap();
+        let start = header
+            .split("-")
+            .nth(1)
+            .expect("Should get date separated by - from page header")
+            .trim();
+
+        let start = parse_french_date(start);
         let end = end_of_month(&start);
 
         let args = Args { start, end, ..args };
@@ -522,5 +557,26 @@ impl ProgessiHandle {
         element.append_child(&preview).unwrap();
 
         ProgessiHandle {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_avril() {
+        let date = parse_french_date("avril 2025");
+        assert_eq!(date.day(), 1);
+        assert_eq!(date.month(), 4);
+        assert_eq!(date.year(), 2025);
+    }
+
+    #[test]
+    fn parse_mai() {
+        let date = parse_french_date("Mai 2025");
+        assert_eq!(date.day(), 1);
+        assert_eq!(date.month(), 5);
+        assert_eq!(date.year(), 2025);
     }
 }
