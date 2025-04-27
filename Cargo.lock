@@ -286,12 +286,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "describe"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6948ebb16e3fada9ec82a801f6ae1bb92b71857d61ef3a89d9d075f28ddd321b"
-
-[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1452,8 +1446,6 @@ dependencies = [
  "colored",
  "console_error_panic_hook",
  "csv",
- "describe",
- "futures",
  "getrandom",
  "gloo",
  "rand",
