@@ -1,5 +1,4 @@
 use std::{
-    cell::RefCell,
     collections::HashMap,
     error::Error,
     fmt::{Display, Formatter},
@@ -17,7 +16,7 @@ use crate::{
 };
 
 pub struct ProviderHandle {
-    provider: RefCell<Box<dyn Provider>>,
+    provider: Box<dyn Provider>,
     args: Args,
     display: HashMap<String, String>,
     table: MyTable<u8>,
@@ -28,9 +27,8 @@ impl ProviderHandle {
     pub fn new(args: Args) -> Result<ProviderHandle, ProviderNotFound> {
         let options = args
             .provider_options
-            .clone()
-            .into_iter()
-            .map(|o| split_eq(&o).unwrap())
+            .iter()
+            .map(|o| split_eq(o).unwrap())
             .collect();
 
         let provider = args.provider.clone();
@@ -56,14 +54,13 @@ impl ProviderHandle {
             table: Default::default(),
             args,
             display,
-            provider: RefCell::new(provider),
+            provider,
             entries: Default::default(),
         }
     }
 
     pub async fn download_entries(&mut self) -> Result<(), Box<dyn Error>> {
-        let mut provider = self.provider.borrow_mut();
-        self.entries = provider.load(self.args.start, self.args.end).await?;
+        self.entries = self.provider.load(self.args.start, self.args.end).await?;
         Ok(())
     }
 
@@ -72,10 +69,9 @@ impl ProviderHandle {
         let renames = Renames::build(&self.args)?;
         let entries = self
             .entries
-            .clone()
-            .into_iter()
+            .iter()
             .filter(|x| predicate_filter(x, &param))
-            .map(|x| renames.predicate_rename(x))
+            .map(|x| renames.predicate_rename(x.clone()))
             .collect();
 
         self.table = Proportional::process(entries);
@@ -174,7 +170,8 @@ mod tests {
     struct TestExporter;
 
     impl<'a> Exporter<'a> for TestExporter {
-        type Table = MyTable<u8>
+        type Table
+            = MyTable<u8>
         where
             Self: 'a;
 

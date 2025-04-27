@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error, str::FromStr};
+use std::{collections::HashMap, error::Error, rc::Rc, str::FromStr, sync::Mutex};
 
 use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Utc};
 use gloo::events::EventListener;
@@ -14,8 +14,6 @@ use crate::{
     utils::end_of_month,
 };
 
-use std::sync::Arc;
-use std::sync::Mutex;
 use web_sys::{
     console::log_1, Document, Event, HtmlButtonElement, HtmlDivElement, HtmlElement,
     HtmlInputElement, HtmlLiElement, HtmlOptionElement, HtmlSelectElement, HtmlStyleElement,
@@ -211,7 +209,8 @@ fn add_timelines(document: &Document, timelines: &Vec<String>) {
 }
 
 impl<'a> Exporter<'a> for Progessi {
-    type Table = MyTable<u8>
+    type Table
+        = MyTable<u8>
     where
         Self: 'a;
 
@@ -358,7 +357,8 @@ fn create_row(document: &Document) -> HtmlElement {
 }
 
 impl<'a> Exporter<'a> for ProgessiPreview {
-    type Table = MyTable<u8>
+    type Table
+        = MyTable<u8>
     where
         Self: 'a;
 
@@ -421,10 +421,7 @@ impl<'a> Exporter<'a> for ProgessiPreview {
             row.append_child(&cell).unwrap();
 
             for date in &col_headers {
-                let span = create_cell(
-                    &self.document,
-                    &table.get(r.clone(), *date).to_string(),
-                );
+                let span = create_cell(&self.document, &table.get(r.clone(), *date).to_string());
                 row.append_child(&span).unwrap();
             }
         }
@@ -433,14 +430,11 @@ impl<'a> Exporter<'a> for ProgessiPreview {
     }
 }
 
-async fn download_entries(handle: Arc<Mutex<ProviderHandle>>) {
-    handle
-        .lock()
-        .unwrap()
-        .download_entries()
-        .await
-        .unwrap_throw();
-    handle.lock().unwrap().process().unwrap_throw();
+#[allow(clippy::await_holding_lock)]
+async fn download_entries(handle: Rc<Mutex<ProviderHandle>>) {
+    let mut handle = handle.lock().unwrap();
+    handle.download_entries().await.unwrap_throw();
+    handle.process().unwrap_throw();
 }
 
 fn create_button(document: &Document, text: &str) -> HtmlButtonElement {
@@ -495,16 +489,16 @@ impl ProgessiHandle {
         handle.download_entries().await.unwrap_throw();
         handle.process().unwrap_throw();
 
-        let handle = Arc::new(Mutex::new(handle));
+        let handle = Rc::new(Mutex::new(handle));
 
-        let clone = Arc::clone(&handle);
+        let clone = Rc::clone(&handle);
         let on_click = EventListener::new(&dowload, "click", move |_event| {
-            let clone = Arc::clone(&clone);
+            let clone = Rc::clone(&clone);
             wasm_bindgen_futures::spawn_local(download_entries(clone));
         });
         on_click.forget();
 
-        let clone = Arc::clone(&handle);
+        let clone = Rc::clone(&handle);
         let progessi = Progessi {
             start,
             document: document.clone(),
@@ -516,7 +510,7 @@ impl ProgessiHandle {
         on_click.forget();
 
         let progessi = ProgessiPreview::new(start, document.clone());
-        let clone = Arc::clone(&handle);
+        let clone = Rc::clone(&handle);
         let on_click = EventListener::new(&preview, "click", move |_event| {
             let handle = clone.lock().unwrap();
             handle.export(Box::new(progessi.clone())).unwrap_throw();

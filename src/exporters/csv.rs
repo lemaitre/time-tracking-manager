@@ -10,7 +10,8 @@ use super::Exporter;
 pub struct CSV {}
 
 impl<'a> Exporter<'a> for CSV {
-    type Table = MyTable<u8>
+    type Table
+        = MyTable<u8>
     where
         Self: 'a;
 

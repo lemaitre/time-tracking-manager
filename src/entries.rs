@@ -21,7 +21,7 @@ impl Entry {
 
     pub fn to_project_task(&self) -> String {
         if self.task.is_empty() {
-            self.project.to_string().clone()
+            self.project.to_string()
         } else {
             format!("{}___{}", &self.project, &self.task)
         }

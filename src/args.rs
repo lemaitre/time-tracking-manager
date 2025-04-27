@@ -90,7 +90,7 @@ mod tests {
         let args = Args::default();
         assert_eq!(
             args,
-            serde_json::from_str("{\"provider\":\"clockify\"}".into())
+            serde_json::from_str("{\"provider\":\"clockify\"}")
                 .expect("valid json representing Args")
         )
     }
