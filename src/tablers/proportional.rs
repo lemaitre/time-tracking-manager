@@ -14,7 +14,8 @@ pub struct Proportional {}
 /// Compute table containing the daily sum for each entry related to same project and task divided by the sum of entries
 ///
 impl<'a> Tabler<'a> for Proportional {
-    type Table = MyTable<u8>
+    type Table
+        = MyTable<u8>
     where
         Self: 'a;
 

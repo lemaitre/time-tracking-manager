@@ -52,9 +52,18 @@ pub struct MyTable<T> {
 }
 
 impl<T: Clone + Default> Table for MyTable<T> {
-    type RowIter<'a> = std::collections::hash_set::Iter<'a, String> where T: 'a;
-    type ColIter<'a> = std::collections::hash_set::Iter<'a, DateTime<Utc>> where T: 'a;
-    type Item<'a> = T where Self: 'a;
+    type RowIter<'a>
+        = std::collections::hash_set::Iter<'a, String>
+    where
+        T: 'a;
+    type ColIter<'a>
+        = std::collections::hash_set::Iter<'a, DateTime<Utc>>
+    where
+        T: 'a;
+    type Item<'a>
+        = T
+    where
+        Self: 'a;
 
     fn row_headers(&self) -> Self::RowIter<'_> {
         self.row_headers.iter()

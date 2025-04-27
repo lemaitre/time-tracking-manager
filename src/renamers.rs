@@ -43,8 +43,8 @@ impl Renames {
         for r in &self.r {
             if e.project == r.p1 && e.task == r.t1 {
                 return Entry {
-                    project: r.p2.to_string(),
-                    task: r.t2.to_string(),
+                    project: r.p2.clone(),
+                    task: r.t2.clone(),
                     ..e
                 };
             }
