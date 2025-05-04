@@ -11,7 +11,7 @@ use crate::{
     filters::{predicate_filter, FilterParam},
     providers::{clockify::Clockify, ics::Ics, Provider},
     renamers::Renames,
-    tablers::{proportional::Proportional, MyTable, Tabler},
+    tablers::{month_proportional::MonthProportional, MyTable, Tabler},
     utils::{self, split_eq},
 };
 
@@ -81,7 +81,7 @@ impl ProviderHandle {
             .map(|x| renames.predicate_rename(x.clone()))
             .collect();
 
-        self.table = Proportional::process(entries);
+        self.table = MonthProportional::process(entries);
         Ok(())
     }
 
@@ -138,6 +138,7 @@ mod tests {
                         .checked_add_signed(TimeDelta::hours(day * 24 + 1))
                         .unwrap(),
                     tags: Default::default(),
+                    absolute: None,
                 });
                 entries.push(Entry {
                     billable: true,
@@ -152,6 +153,7 @@ mod tests {
                         .checked_add_signed(TimeDelta::hours(day * 24 + 2))
                         .unwrap(),
                     tags: Default::default(),
+                    absolute: None,
                 });
                 entries.push(Entry {
                     billable: true,
@@ -166,6 +168,7 @@ mod tests {
                         .checked_add_signed(TimeDelta::hours(day * 24 + 3))
                         .unwrap(),
                     tags: Default::default(),
+                    absolute: None,
                 });
             }
 

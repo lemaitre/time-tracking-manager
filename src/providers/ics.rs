@@ -88,6 +88,29 @@ impl Provider for Ics {
                     continue;
                 }
 
+                let mut workday = true;
+                let mut absolute = None;
+
+                if let Some(description) = &event_description {
+                    for line in description.lines() {
+                        let (key, value) = line.split_once(':').unwrap_or((line, ""));
+                        let key = key.trim_ascii();
+                        let value = value.trim_ascii();
+
+                        match (key, value) {
+                            ("absolute", duration) => {
+                                absolute =
+                                    Some(duration.parse().expect("Invalid absolute duration"));
+                            }
+                            ("workday" | "work-day", "0" | "no" | "false") => workday = false,
+                            ("outofoffice" | "out-of-office", "" | "1" | "yes" | "true") => {
+                                workday = false
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
                 let (project, task) = event_name.split_once(':').unwrap_or((&event_name, ""));
                 let project = project.trim_ascii();
                 let task = task.trim_ascii();
@@ -98,9 +121,14 @@ impl Provider for Ics {
                     billable: true,
                     project: project.to_string(),
                     task: task.to_string(),
-                    tags: vec![],
+                    tags: if workday {
+                        vec![]
+                    } else {
+                        vec![String::from("out-of-office")]
+                    },
                     end: event_end,
                     start: event_start,
+                    absolute,
                 });
             }
         }
