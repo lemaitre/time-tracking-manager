@@ -4,10 +4,32 @@ use chrono::Datelike;
 
 use super::{MyTable, Tabler};
 
-#[derive(Debug, Clone, Default)]
-pub struct MonthProportional;
-
 const SLOTS_PER_DAY: u8 = 100;
+
+#[derive(Debug, Clone)]
+pub struct MonthProportional {
+    pub period: Period,
+    pub granularity: u8,
+}
+
+#[derive(Debug, Clone, Default)]
+pub enum Period {
+    #[default]
+    Day,
+    Week,
+    Month,
+    Year,
+    All,
+}
+
+impl Default for MonthProportional {
+    fn default() -> Self {
+        Self {
+            period: Default::default(),
+            granularity: SLOTS_PER_DAY,
+        }
+    }
+}
 
 impl<'a> Tabler<'a> for MonthProportional {
     type Table
@@ -15,15 +37,25 @@ impl<'a> Tabler<'a> for MonthProportional {
     where
         Self: 'a;
 
-    fn process(mut entries: Vec<crate::entries::Entry>) -> Self::Table {
+    fn process(&self, mut entries: Vec<crate::entries::Entry>) -> Self::Table {
+        assert!(SLOTS_PER_DAY % self.granularity == 0);
+
         entries.sort_by_key(crate::entries::Entry::get_start_day);
 
         let mut table = Self::Table::default();
 
-        for entries in entries
-            .chunk_by(|a, b| (a.start.year(), a.start.month()) == (b.start.year(), b.start.month()))
-        {
-            MonthProportional::process_slice(&mut table, entries);
+        let pred: fn(&crate::entries::Entry, &crate::entries::Entry) -> bool = match self.period {
+            Period::Day => |a, b| a.get_start_day() == b.get_start_day(),
+            Period::Week => |a, b| a.start.iso_week() == b.start.iso_week(),
+            Period::Month => {
+                |a, b| (a.start.year(), a.start.month()) == (b.start.year(), b.start.month())
+            }
+            Period::Year => |a, b| a.start.year() == b.start.year(),
+            Period::All => |_, _| true,
+        };
+
+        for entries in entries.chunk_by(pred) {
+            self.process_slice(&mut table, entries);
         }
 
         table
@@ -31,7 +63,8 @@ impl<'a> Tabler<'a> for MonthProportional {
 }
 
 impl MonthProportional {
-    fn process_slice(table: &mut MyTable<u8>, entries: &[crate::entries::Entry]) {
+    fn process_slice(&self, table: &mut MyTable<u8>, entries: &[crate::entries::Entry]) {
+        let granularity_norm = SLOTS_PER_DAY / self.granularity;
         let mut total_absolute = 0.;
         let mut total_relative = 0.;
         let mut total_days = 0;
@@ -62,16 +95,16 @@ impl MonthProportional {
             }
 
             if workday {
-                days.insert(day, SLOTS_PER_DAY as i32);
+                days.insert(day, self.granularity as i32);
             }
         }
 
-        let mut remaining = SLOTS_PER_DAY as i32 * total_days;
+        let mut remaining = self.granularity as i32 * total_days;
 
-        let norm = (total_days as f64 - total_absolute) * SLOTS_PER_DAY as f64 / total_relative;
+        let norm = (total_days as f64 - total_absolute) * self.granularity as f64 / total_relative;
 
         for (slots, absolute, _, _) in rows.values_mut() {
-            let n = (*absolute * SLOTS_PER_DAY as f64)
+            let n = (*absolute * self.granularity as f64)
                 .floor()
                 .min(remaining as f64);
             *slots += n as i32;
@@ -86,7 +119,7 @@ impl MonthProportional {
         let mut remainder = rows
             .values_mut()
             .map(|(slots, absolute, relative, _)| {
-                let absolute = (*absolute * SLOTS_PER_DAY as f64).fract();
+                let absolute = (*absolute * self.granularity as f64).fract();
                 let relative = (*relative * norm).fract();
                 (slots, absolute + relative)
             })
@@ -115,12 +148,16 @@ impl MonthProportional {
                 let Some(day) = days.get_mut(&entry.get_start_day()) else {
                     continue;
                 };
-                let absolute = entry.absolute.unwrap_or_default() * SLOTS_PER_DAY as f64;
+                let absolute = entry.absolute.unwrap_or_default() * self.granularity as f64;
                 let relative = entry.duration().num_seconds() as f64 * norm;
                 let n = (absolute + relative).ceil() as i32;
                 let n = n.min(**slots).min(*day);
 
-                if let Some(old) = table.insert(name.clone(), entry.get_start_day(), n as u8) {
+                if let Some(old) = table.insert(
+                    name.clone(),
+                    entry.get_start_day(),
+                    n as u8 * granularity_norm,
+                ) {
                     *table.get_mut(name.clone(), entry.get_start_day()).unwrap() += old;
                 }
                 **slots -= n;
@@ -134,7 +171,11 @@ impl MonthProportional {
                 };
                 let n = (**slots).min(*day);
 
-                if let Some(old) = table.insert(name.clone(), entry.get_start_day(), n as u8) {
+                if let Some(old) = table.insert(
+                    name.clone(),
+                    entry.get_start_day(),
+                    n as u8 * granularity_norm,
+                ) {
                     *table.get_mut(name.clone(), entry.get_start_day()).unwrap() += old;
                 }
                 **slots -= n;
@@ -147,7 +188,7 @@ impl MonthProportional {
             for (&date, day) in days {
                 let n = (**slots).min(*day);
 
-                if let Some(old) = table.insert(name.clone(), date, n as u8) {
+                if let Some(old) = table.insert(name.clone(), date, n as u8 * granularity_norm) {
                     *table.get_mut(name.clone(), date).unwrap() += old;
                 }
                 **slots -= n;

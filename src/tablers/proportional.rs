@@ -8,7 +8,7 @@ use rand::{distributions::Uniform, SeedableRng};
 
 use super::{MyTable, Table, Tabler};
 
-pub struct Proportional {}
+pub struct Proportional;
 
 ///
 /// Compute table containing the daily sum for each entry related to same project and task divided by the sum of entries
@@ -19,7 +19,7 @@ impl<'a> Tabler<'a> for Proportional {
     where
         Self: 'a;
 
-    fn process(entries: Vec<crate::entries::Entry>) -> Self::Table {
+    fn process(&self, entries: Vec<crate::entries::Entry>) -> Self::Table {
         let mut delta: MyTable<TimeDelta> = MyTable::default();
         let mut days: HashMap<DateTime<Utc>, TimeDelta> = HashMap::new();
 
@@ -110,7 +110,7 @@ mod tests {
             end: day.checked_add_signed(TimeDelta::hours(14)).unwrap(),
             ..Default::default()
         }];
-        let table = Proportional::process(entries);
+        let table = Proportional.process(entries);
         assert_eq!(table.col_headers().len(), 1);
         assert_eq!(table.row_headers().len(), 1);
     }
@@ -146,7 +146,7 @@ mod tests {
             },
             e2.clone(),
         ];
-        let table = Proportional::process(entries);
+        let table = Proportional.process(entries);
 
         assert_eq!(table.col_headers().len(), 1);
         assert_eq!(table.row_headers().len(), 2);
@@ -181,7 +181,7 @@ mod tests {
                 ..Default::default()
             },
         ];
-        let table = Proportional::process(entries);
+        let table = Proportional.process(entries);
 
         let sum: u8 = table.row_headers().map(|r| table.get(r.clone(), day)).sum();
 

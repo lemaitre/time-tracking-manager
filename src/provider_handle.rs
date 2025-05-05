@@ -81,7 +81,7 @@ impl ProviderHandle {
             .map(|x| renames.predicate_rename(x.clone()))
             .collect();
 
-        self.table = MonthProportional::process(entries);
+        self.table = MonthProportional::default().process(entries);
         Ok(())
     }
 
