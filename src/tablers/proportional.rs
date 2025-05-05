@@ -7,7 +7,7 @@ use super::{MyTable, Tabler};
 const SLOTS_PER_DAY: u8 = 100;
 
 #[derive(Debug, Clone)]
-pub struct MonthProportional {
+pub struct Proportional {
     pub period: Period,
     pub granularity: u8,
 }
@@ -22,7 +22,7 @@ pub enum Period {
     All,
 }
 
-impl Default for MonthProportional {
+impl Default for Proportional {
     fn default() -> Self {
         Self {
             period: Default::default(),
@@ -31,7 +31,7 @@ impl Default for MonthProportional {
     }
 }
 
-impl<'a> Tabler<'a> for MonthProportional {
+impl<'a> Tabler<'a> for Proportional {
     type Table
         = MyTable<u8>
     where
@@ -62,7 +62,7 @@ impl<'a> Tabler<'a> for MonthProportional {
     }
 }
 
-impl MonthProportional {
+impl Proportional {
     fn process_slice(&self, table: &mut MyTable<u8>, entries: &[crate::entries::Entry]) {
         let granularity_norm = SLOTS_PER_DAY / self.granularity;
         let mut total_absolute = 0.;
@@ -214,7 +214,7 @@ mod tests {
             end: day.checked_add_signed(TimeDelta::hours(14)).unwrap(),
             ..Default::default()
         }];
-        let table = MonthProportional::default().process(entries);
+        let table = Proportional::default().process(entries);
         assert_eq!(table.col_headers().len(), 1);
         assert_eq!(table.row_headers().len(), 1);
     }
@@ -250,7 +250,7 @@ mod tests {
             },
             e2.clone(),
         ];
-        let table = MonthProportional::default().process(entries);
+        let table = Proportional::default().process(entries);
 
         assert_eq!(table.col_headers().len(), 1);
         assert_eq!(table.row_headers().len(), 2);
@@ -285,7 +285,7 @@ mod tests {
                 ..Default::default()
             },
         ];
-        let table = MonthProportional::default().process(entries);
+        let table = Proportional::default().process(entries);
 
         let sum: u8 = table.row_headers().map(|r| table.get(r.clone(), day)).sum();
 

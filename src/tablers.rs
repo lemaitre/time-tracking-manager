@@ -1,4 +1,4 @@
-pub mod month_proportional;
+pub mod proportional;
 
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},

@@ -11,7 +11,7 @@ use crate::{
     filters::{predicate_filter, FilterParam},
     providers::{clockify::Clockify, ics::Ics, Provider},
     renamers::Renames,
-    tablers::{month_proportional::MonthProportional, MyTable, Tabler},
+    tablers::{proportional::Proportional, MyTable, Tabler},
     utils::{self, split_eq},
 };
 
@@ -81,7 +81,7 @@ impl ProviderHandle {
             .map(|x| renames.predicate_rename(x.clone()))
             .collect();
 
-        self.table = MonthProportional::default().process(entries);
+        self.table = Proportional::default().process(entries);
         Ok(())
     }
 
