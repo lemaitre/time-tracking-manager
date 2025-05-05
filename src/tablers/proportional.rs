@@ -14,11 +14,11 @@ pub struct Proportional {
 
 #[derive(Debug, Clone, Default)]
 pub enum Period {
-    #[default]
     Day,
     Week,
     Month,
     Year,
+    #[default]
     All,
 }
 

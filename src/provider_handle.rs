@@ -21,6 +21,7 @@ pub struct ProviderHandle {
     display: HashMap<String, String>,
     table: MyTable<u8>,
     entries: Vec<Entry>,
+    proportional: Proportional,
 }
 
 impl ProviderHandle {
@@ -59,10 +60,21 @@ impl ProviderHandle {
 
         ProviderHandle {
             table: Default::default(),
-            args,
             display,
             provider,
             entries: Default::default(),
+            proportional: Proportional {
+                period: match args.period.as_str() {
+                    "day" => crate::tablers::proportional::Period::Day,
+                    "week" => crate::tablers::proportional::Period::Week,
+                    "month" => crate::tablers::proportional::Period::Month,
+                    "year" => crate::tablers::proportional::Period::Year,
+                    "" | "all" => crate::tablers::proportional::Period::All,
+                    period => panic!("{period} is not a valid period. Expect day|week|month|year"),
+                },
+                granularity: args.granularity,
+            },
+            args,
         }
     }
 
@@ -81,7 +93,7 @@ impl ProviderHandle {
             .map(|x| renames.predicate_rename(x.clone()))
             .collect();
 
-        self.table = Proportional::default().process(entries);
+        self.table = self.proportional.process(entries);
         Ok(())
     }
 
